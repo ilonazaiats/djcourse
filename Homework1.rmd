@@ -21,9 +21,10 @@ str_vec[1] + str_vec[2]
 # do it here
 double_vec <- c()
 str_vec <- c("1.19", "6.24", "1.68", "3.56", "7.16", "7.43", "4.44", "0.4", "4.44", "4.48", "0.77", "5.2", "3.85", "2.55", "4.74", "2.48", "4.22", "4.47", "5.66", "4.67", "4.5", "8.43", "1.1", "2.66", "8.93")
-for(i in str_vec){
-    double_vec <- as.double(i)
+for (i in str_vec){
+  double_vec <- as.double(str_vec[1])
 }
+print(double_vec)
 ```
 
 
@@ -44,18 +45,17 @@ sd(str_vec)
 ```
 
 ### Завдання 4
+(спочатку запустіть весь код в цьому блоці — це завантаження даних)
 ```{r}
-library(tidyverse)
+library(tidyverse)    # встановіть пакет, якщо бачите помилку, що його нема: install.packages("tidyverse")
 url <- "https://disp.ua.energy/datagov/dg_year.csv"
-df <- read.csv(url(url))
+df <- read.csv(url(url))    # to read data from web 
 df$Дата <- as.POSIXct(df$Дата, format = "%d.%m.%Y %H:%M:%S")    # date column as date, not as character
 head(df)
 ```
-Це дані генерації електроенергії з порталу відкритих даних.
+Це дані генерації електроенергії з порталу відкритих даних data.gov.ua (там багато цікавого).
 
 ### 1. Знайдіть середнє, медіану, стандартне відхилення (standart deviation) споживання за годину (колонка "Споживання")
 ```{r}
-
+mean(df$)
 ```
-
-
