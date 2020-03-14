@@ -50,7 +50,7 @@ sd(str_vec)
 ```{r}
 library(tidyverse)    # встановіть пакет, якщо бачите помилку, що його нема: install.packages("tidyverse")
 url <- "https://disp.ua.energy/datagov/dg_year.csv"
-df <- read.csv(url(url))    # to read data from web 
+df <- read.csv(url(url), encoding = "UTF-8")    # to read data from web 
 df$Дата <- as.POSIXct(df$Дата, format = "%d.%m.%Y %H:%M:%S")    # date column as date, not as character
 head(df)
 ```
@@ -58,5 +58,7 @@ head(df)
 
 ### 1. Знайдіть середнє, медіану, стандартне відхилення (standart deviation) споживання за годину (колонка "Споживання")
 ```{r}
-mean(df$)
+mean(df$Споживання)
+median(df$Споживання)
+sd(df$Споживання))
 ```
