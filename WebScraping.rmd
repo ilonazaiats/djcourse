@@ -13,6 +13,9 @@ library(progress)
 url <- "https://zaxid.net/vulichne_osvitlennya_tag43706/"
 content <- read_html(url)
 content
+
+read_html_safely <- safely(read_html)
+map(url,read_html_safely)
 ```
 
 # Знаходимо потрібні елементи на сторінці з допомогою функції inspect
@@ -70,18 +73,17 @@ url_template <- "https://zaxid.net/vulichne_osvitlennya_tag43706/"
 # Оскільки в цьому розділі новин є лише 2 сторінки, то зациклюємо їх.
 ```{r}
 for (page in 1:npages) {
-  # з'єднуємо рядки: основу url-адреси, № сторінки помножений на 10, бо сторінки йдуть з кроком 10
   url <- str_c(url_template,
-               page + "newsfrom44")
+               "newsfrom44")
   
   content <- read_html(url)
   
-  # Копіпаст коду для першої сторінки
+  
   titles <- content %>%
     html_nodes('div.news-title') %>%
     html_text() %>%
     str_trim() %>%
-    c(titles, .)    # "." крапка означає змінну в пайпі, якщо пона не на першому місці 
+    c(titles, .)
   
   dates <- content %>%
     html_nodes('div.time') %>%
@@ -89,15 +91,14 @@ for (page in 1:npages) {
     str_trim()  %>%
     c(dates, .)
   
-  # ще додамо лінки. Тут вибираємо не текст, а атрибут "href" тега "<a>" — лінк
+  
   links <- content %>%
-    html_nodes('div.news-title a') %>%
+    html_nodes('div.news-title') %>%
     html_attr("href") %>%
     c(links, .)
   
-  # Ще один важливий крок: затримка між запитами, щоб не зробити DDoS-атаку на сайт
-  Sys.sleep(3)    # 2 секунди програма буде "спати" 
+ 
+  Sys.sleep(3) 
   
-  # Оновимо прогрес-бар. Це для комфорту, щоб бачити, скільки ще лишилось сторінок
   pb$tick()
 }
