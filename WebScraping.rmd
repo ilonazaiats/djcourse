@@ -43,12 +43,12 @@ dates
 ```{r}
 df <- data.frame(titles = titles, date = dates)
 
-write.csv(df, "eu_disinfo_1st_page.csv", row.names = FALSE)
+write.csv(df, "light.csv", row.names = FALSE)
 ```
 
 # Читаємо csv
 ```{r}
-read.csv("eu_disinfo_1st_page.csv")
+read.csv("light.csv")
 ```
 
 # Зациклюємо та качаємо те саме для кожної сторінки
@@ -64,7 +64,7 @@ dates <- c()
 titles <- c()
 links <- c()
 
-url_template <- "https://zaxid.net/vulichne_osvitlennya_tag43706/newsfrom"
+url_template <- "https://zaxid.net/vulichne_osvitlennya_tag43706/"
 ```
 
 # Оскільки в цьому розділі новин є лише 2 сторінки, то зациклюємо їх.
@@ -72,7 +72,7 @@ url_template <- "https://zaxid.net/vulichne_osvitlennya_tag43706/newsfrom"
 for (page in 1:npages) {
   # з'єднуємо рядки: основу url-адреси, № сторінки помножений на 10, бо сторінки йдуть з кроком 10
   url <- str_c(url_template,
-               page * 44)
+               page + "newsfrom44")
   
   content <- read_html(url)
   
@@ -101,4 +101,3 @@ for (page in 1:npages) {
   # Оновимо прогрес-бар. Це для комфорту, щоб бачити, скільки ще лишилось сторінок
   pb$tick()
 }
-```
