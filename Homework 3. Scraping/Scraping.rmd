@@ -1,1 +1,117 @@
 
+# Web Scraping. Я взяла сайт nv.ua, де обрала категорію "краса та мода" і спробувала витягнути назву, дату та лінк кожної статті з 10 сторінок. 
+
+# 1. Імпортуємо необхідні бібліотеки:
+```{r setup, include=FALSE}
+library(rvest)
+library(tidyverse)
+library(progress)
+```
+
+# 2. Отримуємо html
+```{r}
+url <- "https://nv.ua/ukr/style/krasota-i-moda.html"
+content <- read_html(url)
+content
+```
+
+# 3. Знаходимо потрібні елементи на сторінці з допомогою функції inspect
+# 4. Спробуємо вибрати інформацію про кожну статтю (категорія, дата, к-сть переглядів, назва)
+```{r}
+content %>%
+  html_nodes("div.article-prev__info") %>%
+  html_text()
+```
+
+# 5. Виберемо лише заголовки та дати, використаємо для цього CSS-селектори за допомогою атрибутів.
+```{r}
+titles <- content %>%
+  html_nodes('span2') %>%
+  html_text() %>%
+  str_trim()
+titles
+
+dates <- content %>%
+  html_nodes('span.article-prev__date') %>%
+  html_text() %>%
+  str_trim()
+dates
+
+```
+
+# 6. Створюємо та зберігаємо таблицю, в якій міститимуться заголовки та дати кожної статті з 1 сторінки.
+```{r}
+df <- data.frame(title = titles, date = dates)
+
+write.csv(df, "news_1st_page.csv", row.names = FALSE)
+```
+
+# 7. Читаємо csv
+```{r}
+read.csv("news_1st_page.csv")
+```
+
+# 8. Прописуємо кількість сторінок, як потрібно зациклити, створюємо progress bar, пусті вектори, в яких будуть зберігатись значення, та url template.
+```{r}
+npages <- 10
+
+pb <- progress_bar$new(
+  format = "  downloading [:bar] :percent in :elapsed ",
+  total = npages, clear = FALSE, width= 60)
+
+dates <- c()
+titles <- c()
+links <- c()
+
+url_template <- "https://nv.ua/ukr/style/krasota-i-moda.html?page="
+```
+
+# 9. Зациклюємо 10 сторінок (назви, дати та посилання на статті)
+```{r}
+for (page in 1:npages) {
+  url <- str_c(url_template,
+               page + 1)
+  
+  content <- read_html(url)
+  
+  
+  titles <- content %>%
+    html_nodes('span2') %>%
+    html_text() %>%
+    str_trim() %>%
+    c(titles, .)
+  
+  dates <- content %>%
+    html_nodes('span.article-prev__date') %>%
+    html_text() %>%
+    str_trim()  %>%
+    c(dates, .)
+  
+  links <- content %>%
+    html_nodes('div.article-prev__info a') %>%
+    html_attr("href") %>%
+    c(links, .)
+  
+  
+  Sys.sleep(3) 
+  
+  pb$tick()
+}
+```
+
+# 10. Робимо з даних датафрейм і зберігаємо його
+```{r}
+
+data.frame(title = titles,
+           date = dates,
+           link = links) %>%
+  write.csv("news_10_pages.csv",
+            row.names = FALSE) 
+```
+
+# 11. Читаємо датафрейм, який зберегли
+```{r}
+df <- read.csv("news_10_pages.csv")
+df
+```
+
