@@ -1,8 +1,8 @@
 ---
-title: "Template for hw4"
+  title: "Template for hw4"
 output: html_notebook
 ---
-
+  
 ```{r}
 library(tidyverse)
 library(lubridate)
@@ -34,8 +34,7 @@ colnames(air) <- colnames(air) %>%
 
 ```{r}
 air <- air %>%
-  mutate(date = as.Date(date)) %>%
-  group_by(week(date))
+  mutate(date = as.Date(date))
 air
 
 # Дістаємо з цієї дати тиждень:
@@ -53,7 +52,7 @@ df <- air %>%
   select (date, india_non.india)
 
 df
-  # ваш код
+# ваш код
 ```
 
 ### 3. Сортування
@@ -62,10 +61,9 @@ df
 ```{r}
 # df <- read.csv("checkpoints/df-2.csv")
 
-df %>%
-  mutate(date = as.Date(date)) %>%
-  select(date, india_non.india) %>%
-  arrange(date)
+df <- df %>%
+  arrange(date)   
+
 ```
 
 ### 4. Розрахунок нових змінних
@@ -74,12 +72,11 @@ df %>%
 # df <- read.csv("checkpoints/df-3.csv")
 
 df <- df %>%
-  mutate(year = lubridate::year(date)) %>%
-  mutate(month = lubridate::month(date)) %>%
-  mutate(day = lubridate::day(date))
+  mutate(year = year(date),
+         month = month(date),
+         day = day(date))
 
 df
-
 ```
 
 ### 5. Фільтрування з групуванням
@@ -89,17 +86,50 @@ df
 2) Відфільтруйте рядки, де в групі два значення (за 2019 та 2020). Кількість значень рахує функція `n()`
 3) Розгрупуйте датафрейм (`ungroup()`)
 
+Розіб'ємо складну задачу на дрібніші. Не все з цього потрібно для виконання завдання, але треба щоб розбратись
+1. Що робить `n()`?
+```{r}
+df %>% mutate(n())
+```
+Бачимо, що `n()` рахує кількість рядків у датафреймі.
+А з `group_by`?
+```{r}
+df %>%
+  group_by(day, month) %>%
+  mutate(n())
+```
+З'явилась колонка "n()", вона дорівнює 2 або 1. Тобто порахували рядки не у всьому датафремі, а для кожної групи. Значення 2 буде у рядках, для яких є зачення і у 2019, і у 2020 роках, а значення "1" там е є лише цифра за 2019. Наприклад, є 2 значення за 1 квітня, бо перше квітня вже було і у 2019, і у 2020. А за 10 жовтня буде лише одне значення, бо 2020-10-10 ще не настало:
+```{r}
+df %>% filter(day == 10, month == 10)
+```
+(1 рядок)
+```{r}
+df %>% filter(day == 1, month == 4)
+```
+(2 рядки)
+Отже це так працює. Нам навіть не треба колонка "n()", достатньо просто зробити фільтр щоб результат функції "n()" у групі за днем і місяцем дорівнював "2".
+
 ```{r}
 # df <- read.csv("checkpoints/df-4.csv")
 df <- df %>%
   group_by(day, month) %>%
   mutate(n()) %>%
-  filter(2019, 2020) %>%
+  filter(n() == 2) %>%
   ungroup(df)
 
 df
 
 ```
+
+Перевірка: результат має бути близьким до сьогоднішньої дати (скоріше за все останній запис у даних буде за вчора)
+```{r}
+df$date %>% max()
+```
+а мінімальна дата буде 1 січня?
+```{r}
+df$date %>% min()
+```
+Якщо так, то все вірно, ура)
 
 ### 6. Перетворення
 Порахуйте, наскільки знизився авіатрафік у порівянні з попереднім роком.
@@ -124,7 +154,7 @@ wider_df
 # wider_df <- read.csv("checkpoints/df-5-wider.csv")
 
 wider_df <- wider_df %>%
-  mutate(changes = y2020/y2019 * 100, date = str_c(day, month, "2020", sep = "-"))
+  mutate(changes = y2020/y2019 * 100, date = str_c("2020", month, day, sep = "-"))
 
 wider_df
  nrow(wider_df) 
@@ -143,7 +173,7 @@ prepare_covid <- function(url, col_name) {
                  names_to = "date",
                  names_prefix = "X",
                  values_to = col_name
-                 ) %>%
+    ) %>%
     mutate(date = mdy(date)) %>%
     select(-c(Lat, Long)) %>%
     group_by(country, date) %>%
@@ -171,9 +201,12 @@ covid19
 #   mutate(date = as.Date(date))
 covid19 <- covid19 %>%
 filter(country == "India") %>%
-  full_join(wider_df, covid19, by = c('date'))
-  
-covid19
+full_join(covid19) %>%
+  full_join(df)
+
+df %>% filter(date == "2020-04-05")
+
+
 ```
 
 ### 8. Збережіть отримані з'єднані дані в csv.
@@ -187,4 +220,3 @@ write.csv(df, "covid19_clean.csv", row.names = FALSE)
 ```{r}
 read.csv("covid19_clean.csv")
 ```
-
