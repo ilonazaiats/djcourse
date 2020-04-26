@@ -200,10 +200,11 @@ covid19
 # wider_df <- read.csv("checkpoints/df-6-wider.csv") %>%
 #   mutate(date = as.Date(date))
 covid19 <- covid19 %>%
-filter(country == "India") %>%
-  full_join(wider_df, covid19, by = c('date'))
+  filter(country == "India") %>%
+  full_join(wider_df, by = c('date'))
 
 ```
+#covid19 вже було у аргументах джойна, прийшло через пайп.
 
 ### 8. Збережіть отримані з'єднані дані в csv.
 Додатково можна спробувати побудувати scatterplot чи будь-що інше
