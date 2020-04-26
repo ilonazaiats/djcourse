@@ -171,13 +171,10 @@ covid19
 #   mutate(date = as.Date(date))
 covid19 <- covid19 %>%
 filter(country == "India") %>%
-  arrange(country == "India") 
-
-joined <- full_join(air, covid19, by = 'date') %>%
-
+  arrange(country == "India") %>%
+  full_join(wider_df, covid19, by = c('date'))
+  
 covid19
-
-
 ```
 
 ### 8. Збережіть отримані з'єднані дані в csv.
