@@ -1,0 +1,169 @@
+---
+title: "Homework 4"
+output: html_notebook
+---
+  
+```{r}
+library(tidyverse)
+library(lubridate)
+library(rvest)
+library(dplyr)
+```
+
+## Підготовка
+Дані "за замовчуванням"
+1) Дані авіаційного трафіку за країнами
+```{r}
+air <- read_html("https://www.radarbox.com/statistics/total") %>%
+  html_node("table#datatable") %>%
+  html_table() %>%
+  rename(date = Day)
+
+# Трохи приведемо до лау назви колонок, для зручності
+colnames(air) <- colnames(air) %>%
+  str_replace("  ", "_") %>%
+  str_replace(" ", ".") %>%
+  str_to_lower()
+```
+
+### 1. Переконуємось, що колонка "day", так у даних назвали дату, читається як дата. 
+
+```{r}
+air <- air %>%
+  mutate(date = as.Date(date))
+air
+
+# Можемо також дістати з цієї дати тиждень:
+# week("2020-04-12")
+```
+
+### 2. Вибираємо потрібну колонку з даними Індії (`india_non.india`), залишаємо колонку кількості рейсів з/до вибраної країни та дати.
+
+```{r}
+df <- air %>%
+  mutate(date = as.Date(date)) %>%
+  select (date, india_non.india)
+
+df
+```
+
+### 3. Сортування
+Сортуємо дані за датою, від найменшої до найбільшої.
+
+```{r}
+df <- df %>%
+  arrange(date)
+```
+
+### 4. Розрахунок нових змінних
+Додаємо нові колонки "year", "month", "day" до таблиці, в якій буде рік (`year()`), місяць, день з дати.
+
+```{r}
+df <- df %>%
+  mutate(year = year(date),
+         month = month(date),
+         day = day(date))
+
+df
+```
+
+### 5. Фільтрування з групуванням
+Далі спробуємо дізнатись, як змінився авіаційний трафік в порівнянні з попереднім роком. Для цього можемо відфільтрувати рядки за 2019 рік, для яких ще немає порівняння у 2020-му, наприклад, грудень чи листопад 2019.
+
+1) Групуємо дані за місяцем і днем місяця за колонками `day`, `month`.
+2) Фільтруємо рядки, де в групі два значення (за 2019 та 2020). Кількість значень рахує функція `n()`
+3) Розгруповуємо датафрейм (`ungroup()`)
+
+```{r}
+df <- df %>%
+  group_by(day, month) %>%
+  filter(n() == 2) %>%
+  ungroup(df)
+
+df
+```
+
+Перевіряємо:
+```{r}
+df$date %>% max()
+df$date %>% min()
+```
+
+### 6. Перетворення
+Рахуємо, наскільки знизився авіатрафік у порівянні з попереднім роком.
+
+Для цього зробимо окремі колонки для даних 2019 та 2020. Підставляємо в цей код назву колонки зі значеннями кількості польотів у аргумент `values_from`:
+```{r}
+wider_df <- df %>% 
+  pivot_wider(id_cols = c("day", "month"),
+              names_from = "year",
+              values_from = "india_non.india",
+              names_prefix = "y")
+
+wider_df
+```
+
+Рахуємо, як змінились польоти у 2020 в порівнянні з тим же днем 2019-го (`y2020 / y2019`).
+Також у цій же функції `mutate`повертаємо дату за допомогою функції `str_c`, з'єднавши "2020" (рік), місяці та день через роздільник "-".
+```{r}
+wider_df <- wider_df %>%
+  mutate(changes = y2020/y2019 * 100, date = str_c("2020", month, day, sep = "-")) %>%
+  mutate(date = as.Date(date))
+
+wider_df
+```
+
+### 7. З'єднання
+Спершу завантажимо другу таблицю.
+Дані: https://data.humdata.org/dataset/novel-coronavirus-2019-ncov-cases
+
+```{r}
+prepare_covid <- function(url, col_name) {
+  d <- read.csv(url) %>%
+    rename(region = Province.State, country = Country.Region) %>%
+    pivot_longer(cols = -c(region, country, Lat, Long),
+                 names_to = "date",
+                 names_prefix = "X",
+                 values_to = col_name
+    ) %>%
+    mutate(date = mdy(date)) %>%
+    select(-c(Lat, Long)) %>%
+    group_by(country, date) %>%
+    summarise(col_name = sum(get(col_name)))
+  
+  cnames <- colnames(d)
+  cnames[cnames == "col_name"] <- col_name
+  colnames(d) <- cnames
+  return(d)
+}
+
+covid19 <- prepare_covid("https://bit.ly/3aLLfKw", "cases") %>%
+  full_join(prepare_covid("https://bit.ly/2XdZ6W0", "recovered")) %>%
+  full_join(prepare_covid("https://bit.ly/2yEhPQg", "deaths")) %>%
+  mutate(active_cases = cases - recovered - deaths,
+         date = as.Date(date))
+
+covid19
+```
+
+Фільтруємо з даних `covid19` ті, що стосуються Індії з даних авіасполучення. Далі з'єднуємо їх з даними авіасполучення за ключем датою
+
+```{r}
+covid19 <- covid19 %>%
+  filter(country == "India") %>%
+  mutate(date = as.Date(date)) %>%
+  full_join(wider_df, by = c('date'))
+
+covid19
+```
+
+### 8. Зберігаємо отримані з'єднані дані в csv.
+```{r}
+write.csv(covid19, "covid19_clean.csv", row.names = FALSE)
+```
+
+
+### Що вийшло в результаті 
+```{r}
+read.csv("covid19_clean.csv")
+```
