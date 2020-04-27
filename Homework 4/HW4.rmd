@@ -152,7 +152,7 @@ covid19
 covid19 <- covid19 %>%
   filter(country == "India") %>%
   mutate(date = as.Date(date)) %>%
-  full_join(wider_df, by = c('date'))
+  full_join(df, by = c('date'))
 
 covid19
 ```
