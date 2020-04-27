@@ -107,7 +107,7 @@ wider_df
 Також у цій же функції `mutate`повертаємо дату за допомогою функції `str_c`, з'єднавши "2020" (рік), місяці та день через роздільник "-".
 ```{r}
 wider_df <- wider_df %>%
-  mutate(changes = y2020/y2019 * 100, date = str_c("2020", month, day, sep = "-")) %>%
+  mutate(changes = y2020/y2019, date = str_c("2020", month, day, sep = "-")) %>%
   mutate(date = as.Date(date))
 
 wider_df
